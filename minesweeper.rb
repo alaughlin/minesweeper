@@ -1,12 +1,13 @@
 require 'yaml'
 
 class Tile
-  attr_accessor :bombed, :flagged, :revealed
+  attr_accessor :bombed, :flagged, :revealed, :adjacent_bombs
 
   def initialize(bombed = false)
     @bombed = bombed
     @flagged = false
     @revealed = false
+    @adjacent_bombs = 0
   end
 
   def bombed?
@@ -43,38 +44,91 @@ class Board
     [-1, 0],
     [-1, 1]
   ]
-  def initialize
-    @tiles = Array.new(9) { Array.new(9) { Tile.new(rand(5) > 1 ? false : true) } }
+
+  def initialize(size = 9)
+    @tiles = Array.new(size) { Array.new(size) { Tile.new(rand(10) > 1 ? false : true) } }
+    (0...@tiles.length).each do |x|
+      (0...@tiles.length).each do |y|
+        if get_tile([x, y]).bombed?
+          adjacent_coords([x, y]).each do |coord|
+            tile = get_tile(coord)
+            tile.adjacent_bombs += 1 if tile
+          end
+        end
+      end
+    end
+  end
+
+  def size
+    @tiles.length
   end
 
   def over?
-    not_over = false
+    over = true
     @tiles.each do |row|
       row.each do |tile|
         return true if tile.revealed? && tile.bombed?
         if tile.bombed?
-          not_over = true if !tile.flagged?
+          over = false if !tile.flagged?
         else
-          not_over = true if !tile.revealed? || tile.flagged?
+          over = false if !tile.revealed? || tile.flagged?
         end
       end
     end
 
-    not_over
+    over
+  end
+
+  def get_tile(coord)
+    return nil if coord.any? { |c| c < 0 || c >= @tiles.length }
+    @tiles[coord[0]][coord[1]]
   end
 
   def reveal(coord)
-    return if (@tiles[coord[0]][coord[1]].revealed?)
+    return if get_tile(coord).revealed?
+    coord_array = [coord]
 
+    until coord_array.empty?
+      c = coord_array.shift
+      tile = get_tile(c)
+      if tile
+        tile.revealed = true
+        if tile.adjacent_bombs < 1
+          coord_array += adjacent_coords(c).select do |pos|
+            get_tile(pos) && !get_tile(pos).revealed? && !get_tile(pos).bombed?
+          end
+        end
+      end
+    end
   end
 
   def flag(coord)
+    tile = get_tile(coord)
+    tile.flagged = !tile.flagged if tile
+  end
+
+  def adjacent_coords(coord)
+    coord_array = []
+    DELTAS.each do |delta|
+      coord_array << [delta[0] + coord[0], delta[1] + coord[1]]
+    end
+    coord_array
   end
 
   def display
     @tiles.each do |row|
       row.each do |tile|
-        print tile.revealed? ? tile.flagged? ? "f" : "_" : "*"
+        if tile.revealed
+          if tile.flagged?
+            print "F "
+          elsif tile.bombed?
+            print 'ó '
+          else
+            print tile.adjacent_bombs > 0 ? tile.adjacent_bombs.to_s + " " : '_ '
+          end
+        else
+          print '* '
+        end
       end
 
       puts
@@ -84,8 +138,8 @@ end
 
 class Game
   attr_accessor :board
-  def initialize(saved_game = nil)
-    @board = saved_game ? Game.load_game(saved_game) : Board.new
+  def initialize(size = 9, saved_game = nil)
+    @board = saved_game ? Game.load_game(saved_game) : Board.new(size)
   end
 
   def self.load_game(file_name)
@@ -107,13 +161,21 @@ class Game
         coord = get_coord
         action = get_action
       end
-
+      case action
+      when 'b'
+        next
+      when 'f'
+        @board.flag(coord)
+      when 'r'
+        @board.reveal(coord)
+      end
+      @board.display
     end
   end
 
   def get_coord
     coord = [-1, -1]
-    while coord.any? { |c| c < 0 || c > 8 }
+    while coord.any? { |c| c < 0 || c >= @board.size }
       print "Enter a valid coordinate to check: "
       coord = YAML.load(gets.chomp)
     end
@@ -123,16 +185,15 @@ class Game
 
   def get_action
     action = ''
-    until ['f', 'r'].include?(action)
-      print "Enter an action ([r]eveal, [f]lag or [b]ack): "
+    until ['b', 'f', 'r'].include?(action)
+      print "Enter an action ([r]eveal, [f]lag, or [b]ack): "
       action = gets.chomp.downcase
     end
 
     action
   end
-
-  def reveal
 end
 
-g = Game.new("game.txt")
+g = Game.new(4)
 g.board.display
+g.play
