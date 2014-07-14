@@ -185,17 +185,12 @@ class Game
     begin
       until @board.over?
         @board.display
-        action = 'b'
-        while action == 'b'
-          action = get_action
-          if action != 'b' && action != 's'
-            coord = get_coord
-          end
+        action = get_action
+        if action != 's'
+          coord = get_coord
         end
 
         case action
-        when 'b'
-          next
         when 'f'
           @board.flag(coord)
         when 'r'
