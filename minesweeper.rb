@@ -127,7 +127,8 @@ class Board
       row.each do |tile|
         if tile.revealed?
           if tile.bombed?
-            print 'ó '
+            #print 'ó '
+            print "☠ "
           else
             print tile.adjacent_bombs > 0 ? tile.adjacent_bombs.to_s + " " : '_ '
           end
