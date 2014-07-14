@@ -32,7 +32,7 @@ class Tile
 end
 
 class Board
-  attr_accessor :tiles
+  attr_accessor :tiles, :bomb_revealed
 
   DELTAS = [
     [ 0, 1],
@@ -46,7 +46,7 @@ class Board
   ]
 
   def initialize(size = 9)
-    @tiles = Array.new(size) { Array.new(size) { Tile.new(rand(10) > 1 ? false : true) } }
+    @tiles = Array.new(size) { Array.new(size) { Tile.new(rand(7) > 1 ? false : true) } }
     (0...@tiles.length).each do |x|
       (0...@tiles.length).each do |y|
         if get_tile([x, y]).bombed?
@@ -65,14 +65,13 @@ class Board
 
   def over?
     over = true
-    @tiles.each do |row|
-      row.each do |tile|
-        return true if tile.revealed? && tile.bombed?
-        if tile.bombed?
-          over = false if !tile.flagged?
-        else
-          over = false if !tile.revealed? || tile.flagged?
-        end
+    @tiles.flatten.each do |tile|
+      #return @bomb_revealed = true if tile.revealed? && tile.bombed?
+      raise "Revealed bomb, lost!" if tile.revealed? && tile.bombed?
+      if tile.bombed?
+        over = false if !tile.flagged?
+      else
+        over = false if !tile.revealed? || tile.flagged?
       end
     end
 
@@ -102,6 +101,14 @@ class Board
     end
   end
 
+  def reveal_all
+    @tiles.each do |row|
+      row.each do |tile|
+        tile.revealed = true
+      end
+    end
+  end
+
   def flag(coord)
     tile = get_tile(coord)
     tile.flagged = !tile.flagged if tile
@@ -118,16 +125,14 @@ class Board
   def display
     @tiles.each do |row|
       row.each do |tile|
-        if tile.revealed
-          if tile.flagged?
-            print "F "
-          elsif tile.bombed?
+        if tile.revealed?
+          if tile.bombed?
             print 'ó '
           else
             print tile.adjacent_bombs > 0 ? tile.adjacent_bombs.to_s + " " : '_ '
           end
         else
-          print '* '
+          print tile.flagged? ? 'F ' : '* '
         end
       end
 
@@ -155,21 +160,30 @@ class Game
   end
 
   def play
-    until @board.over?
-      action = 'b'
-      while action == 'b'
-        coord = get_coord
-        action = get_action
+    begin
+      until @board.over?
+        @board.display
+        action = 'b'
+        while action == 'b'
+          coord = get_coord
+          action = get_action
+        end
+        case action
+        when 'b'
+          next
+        when 'f'
+          @board.flag(coord)
+        when 'r'
+          @board.reveal(coord)
+        end
       end
-      case action
-      when 'b'
-        next
-      when 'f'
-        @board.flag(coord)
-      when 'r'
-        @board.reveal(coord)
-      end
+
       @board.display
+      puts "You won"
+    rescue
+      @board.reveal_all
+      @board.display
+      puts "You lost!"
     end
   end
 
@@ -180,7 +194,7 @@ class Game
       coord = YAML.load(gets.chomp)
     end
 
-    coord
+    coord.reverse
   end
 
   def get_action
@@ -194,6 +208,5 @@ class Game
   end
 end
 
-g = Game.new(4)
-g.board.display
+g = Game.new(9)
 g.play
