@@ -172,9 +172,11 @@ class Game
     end
   end
 
-  def save_game(file_name)
-    File.open(file_name, 'w').write(@board.to_yaml)
-    puts "Game saved to #{filename}!"
+  def save_game
+    print "Enter a filename to save as: "
+    save_file = gets.chomp
+    File.open(save_file, 'w').write(@board.to_yaml)
+    puts "Game saved to #{save_file}!"
   end
 
   def play
@@ -188,6 +190,7 @@ class Game
             coord = get_coord
           end
         end
+
         case action
         when 'b'
           next
@@ -196,8 +199,7 @@ class Game
         when 'r'
           @board.reveal(coord)
         when 's'
-          print "Enter a filename to save as: "
-          save_game(gets.chomp)
+          save_game
         end
       end
 
