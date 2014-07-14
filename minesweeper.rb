@@ -235,5 +235,7 @@ class Game
   end
 end
 
-g = Game.new(9)
+print "Enter in a saved game (press ENTER if none): "
+save_game = gets.chomp
+g = Game.new(9, save_game)
 g.play
