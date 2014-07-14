@@ -116,7 +116,7 @@ class Board
   def reveal_all
     @tiles.each do |row|
       row.each do |tile|
-        tile.revealed = true
+        tile.revealed = true if tile.bombed?
       end
     end
   end
