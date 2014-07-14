@@ -45,6 +45,18 @@ class Board
     [-1, 1]
   ]
 
+  NUMBER_PICS = {
+    1 => "➀",
+    2 => "➁",
+    3 => "➂",
+    4 => "➃",
+    5 => "➄",
+    6 => "➅",
+    7 => "➆",
+    8 => "➇",
+    9 => "➈"
+  }
+
   def initialize(size = 9)
     @tiles = Array.new(size) { Array.new(size) { Tile.new(rand(7) > 1 ? false : true) } }
     (0...@tiles.length).each do |x|
@@ -130,7 +142,11 @@ class Board
             #print 'ó '
             print "☠ "
           else
-            print tile.adjacent_bombs > 0 ? tile.adjacent_bombs.to_s + " " : '_ '
+            if tile.adjacent_bombs > 0
+              print NUMBER_PICS[tile.adjacent_bombs] + " "
+            else
+              print '_ '
+            end
           end
         else
           print tile.flagged? ? 'F ' : '* '
