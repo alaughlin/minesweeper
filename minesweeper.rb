@@ -34,8 +34,10 @@ class Board
   def display
     @tiles.each do |row|
       row.each do |tile|
-        p tile.revealed? ? tile.flagged? ? "f" : "_" : "*"
+        print tile.revealed? ? tile.flagged? ? "f" : "_" : "*"
       end
+
+      puts
     end
   end
 end
