@@ -149,7 +149,7 @@ class Board
             end
           end
         else
-          print tile.flagged? ? 'F ' : '* '
+          print tile.flagged? ? "\u2691".encode + " " : '* '
         end
       end
 
